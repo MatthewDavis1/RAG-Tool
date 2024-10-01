@@ -1,2 +1,3 @@
 vector-store.db/
 env/
+__pycache__/
