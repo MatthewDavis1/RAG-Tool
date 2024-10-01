@@ -64,6 +64,9 @@ class RAGVectorStore:
         self.vector_store.delete(ids=[doc_id])
         print(f"Removed document with ID '{doc_id}' from the vector store.")
 
+    def get_retriever(self):
+        return self.vector_store.as_retriever()
+
 def main():
     vector_store = RAGVectorStore()
 
