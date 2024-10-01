@@ -5,8 +5,9 @@ import os
 import sys
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
-from langchain_community.document_loaders import TextLoader
-from langchain_community.document_loaders.image import UnstructuredImageLoader
+from langchain_community.document_loaders import (
+    TextLoader, PyPDFLoader, UnstructuredImageLoader
+)
 
 # Get VECTOR_STORE_PATH from environment variable
 VECTOR_STORE_PATH = os.getenv("VECTOR_STORE_PATH")
@@ -30,7 +31,14 @@ class RAGVectorStore:
         if not os.path.exists(file_path):
             print(f"File '{file_path}' does not exist.")
             return
-        loader = UnstructuredImageLoader(file_path)
+        
+        file_extension = os.path.splitext(file_path)[1].lower()
+        
+        if file_extension == '.pdf':
+            loader = PyPDFLoader(file_path)
+        else:
+            loader = TextLoader(file_path)
+        
         documents = loader.load()
         self.vector_store.add_documents(documents)
         print(f"Added documents from '{file_path}' to the vector store.")
@@ -67,6 +75,10 @@ class RAGVectorStore:
     def get_retriever(self):
         return self.vector_store.as_retriever()
 
+    def clear_vector_store(self):
+        self.vector_store.delete_collection()
+        print("Vector store cleared. All documents have been removed.")
+
 def main():
     vector_store = RAGVectorStore()
 
@@ -95,6 +107,9 @@ def main():
     remove_parser = subparsers.add_parser("remove", help="Remove a document from the vector store")
     remove_parser.add_argument("doc_id", type=str, help="ID of the document to remove")
 
+    # Clear vector store
+    subparsers.add_parser("clear", help="Clear all documents from the vector store")
+
     args = parser.parse_args()
 
     if args.command == "create":
@@ -109,6 +124,8 @@ def main():
         vector_store.list_documents()
     elif args.command == "remove":
         vector_store.remove_document(args.doc_id)
+    elif args.command == "clear":
+        vector_store.clear_vector_store()
     else:
         parser.print_help()
 
