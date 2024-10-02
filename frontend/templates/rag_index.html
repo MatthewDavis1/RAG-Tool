@@ -40,49 +40,6 @@
         <div id="message" class="mt-4 text-green-600 text-center"></div>
     </div>
 
-    <script>
-        const linkContainer = document.getElementById('linkContainer');
-        const newLinkInput = document.getElementById('newLink');
-        const addLinkButton = document.getElementById('addLink');
-
-        function addLink(link) {
-            const linkElement = document.createElement('div');
-            linkElement.className = 'flex items-center';
-            linkElement.innerHTML = `
-                <input type="text" name="websites" value="${link}" readonly class="flex-grow mr-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 h-10 px-3" />
-                <button type="button" class="deleteLink px-4 h-10 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
-            `;
-            linkContainer.appendChild(linkElement);
-
-            linkElement.querySelector('.deleteLink').addEventListener('click', () => {
-                linkContainer.removeChild(linkElement);
-            });
-        }
-
-        addLinkButton.addEventListener('click', () => {
-            const link = newLinkInput.value.trim();
-            if (link) {
-                addLink(link);
-                newLinkInput.value = '';
-            }
-        });
-
-        document.getElementById('indexForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            
-            try {
-                const response = await fetch('/index', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-                document.getElementById('message').textContent = result.message;
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('message').textContent = 'An error occurred during indexing.';
-            }
-        });
-    </script>
+    <script src="/static/scripts.js"></script>
 </body>
 </html>

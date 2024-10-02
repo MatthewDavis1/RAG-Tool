@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI, Request, Form, UploadFile, File
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from typing import List
 from rag import RAGVectorStore
@@ -9,6 +10,9 @@ from qa import QAChat
 import os
 
 app = FastAPI()
+
+# Static files
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 # Templates
 templates = Jinja2Templates(directory="frontend/templates")

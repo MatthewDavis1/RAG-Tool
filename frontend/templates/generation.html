@@ -44,42 +44,6 @@
         <div id="answer" class="mt-8 p-4 bg-white rounded-lg shadow hidden"></div>
     </div>
 
-    <script>
-        const form = document.getElementById('generationForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const btnText = document.getElementById('btnText');
-        const spinner = document.getElementById('spinner');
-        const answerDiv = document.getElementById('answer');
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            
-            // Show spinner and disable button
-            btnText.textContent = 'Generating...';
-            spinner.classList.remove('hidden');
-            submitBtn.disabled = true;
-            answerDiv.classList.add('hidden');
-            
-            try {
-                const response = await fetch('/generate', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-                answerDiv.textContent = result.answer;
-                answerDiv.classList.remove('hidden');
-            } catch (error) {
-                console.error('Error:', error);
-                answerDiv.textContent = 'An error occurred during generation.';
-                answerDiv.classList.remove('hidden');
-            } finally {
-                // Hide spinner and enable button
-                btnText.textContent = 'Generate';
-                spinner.classList.add('hidden');
-                submitBtn.disabled = false;
-            }
-        });
-    </script>
+    <script src="/static/scripts.js"></script>
 </body>
 </html>
