@@ -6,7 +6,10 @@ import sys
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import (
-    TextLoader, PyPDFLoader, UnstructuredImageLoader
+    TextLoader,
+    PyPDFLoader,
+    UnstructuredImageLoader,
+    WebBaseLoader
 )
 
 # Get VECTOR_STORE_PATH from environment variable
@@ -51,6 +54,12 @@ class RAGVectorStore:
         images = loader.load()
         self.vector_store.add_documents(images)
         print(f"Added images from '{image_path}' to the vector store.")
+
+    def add_webpages(self, webpage_paths):
+        loader = WebBaseLoader(webpage_paths)
+        documents = loader.load()
+        self.vector_store.add_documents(documents)
+        print(f"Added webpages from '{webpage_paths}' to the vector store.")
 
     def query_vector_store(self, query):
         docs = self.vector_store.similarity_search(query)
@@ -110,6 +119,10 @@ def main():
     # Clear vector store
     subparsers.add_parser("clear", help="Clear all documents from the vector store")
 
+    # Add webpages
+    add_webpages_parser = subparsers.add_parser("add_webpages", help="Add webpages to the vector store")
+    add_webpages_parser.add_argument("webpage_paths", type=str, help="Path to the webpage file")
+
     args = parser.parse_args()
 
     if args.command == "create":
@@ -126,6 +139,8 @@ def main():
         vector_store.remove_document(args.doc_id)
     elif args.command == "clear":
         vector_store.clear_vector_store()
+    elif args.command == "add_webpages":
+        vector_store.add_webpages([link for link in args.webpage_paths.split(',') if len(link) > 0])
     else:
         parser.print_help()
 
