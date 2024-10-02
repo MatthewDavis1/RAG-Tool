@@ -3,6 +3,15 @@ function setupIndexingPage() {
     const linkContainer = document.getElementById('linkContainer');
     const newLinkInput = document.getElementById('newLink');
     const addLinkButton = document.getElementById('addLink');
+    const submitButton = document.querySelector('button[type="submit"]');
+    const messageDiv = document.getElementById('message');
+    const spinner = document.createElement('svg'); // Create spinner element
+    spinner.className = 'animate-spin h-5 w-5 text-white hidden'; // Set classes
+    spinner.innerHTML = `
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    `;
+    submitButton.appendChild(spinner); // Append spinner to submit button
 
     function addLink(link) {
         const linkElement = document.createElement('div');
@@ -30,16 +39,25 @@ function setupIndexingPage() {
         e.preventDefault();
         const formData = new FormData(e.target);
         
+        // Show spinner and disable button
+        spinner.classList.remove('hidden');
+        submitButton.disabled = true;
+        messageDiv.textContent = ''; // Clear previous messages
+        
         try {
             const response = await fetch('/index', {
                 method: 'POST',
                 body: formData
             });
             const result = await response.json();
-            document.getElementById('message').textContent = result.message;
+            messageDiv.textContent = result.message;
         } catch (error) {
             console.error('Error:', error);
-            document.getElementById('message').textContent = 'An error occurred during indexing.';
+            messageDiv.textContent = 'An error occurred during indexing.';
+        } finally {
+            // Hide spinner and enable button
+            spinner.classList.add('hidden');
+            submitButton.disabled = false;
         }
     });
 }
