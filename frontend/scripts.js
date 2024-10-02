@@ -37,18 +37,37 @@ function setupIndexingPage() {
 
     document.getElementById('indexForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target);
-        
+        const formData = new FormData();
+
+        // Append files
+        const fileInput = document.getElementById('files');
+        for (const file of fileInput.files) {
+            if (file.name) { // Ensure the file has a name
+                formData.append('files', file);
+            }
+        }
+
+        // Append websites as a comma-separated string
+        const websites = Array.from(document.getElementsByName('websites'))
+                               .map(input => input.value)
+                               .filter(value => value !== '')
+                               .join(',');
+        formData.append('websites', websites);
+
         // Show spinner and disable button
         spinner.classList.remove('hidden');
         submitButton.disabled = true;
         messageDiv.textContent = ''; // Clear previous messages
-        
+
         try {
             const response = await fetch('/index', {
                 method: 'POST',
                 body: formData
             });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Unknown error');
+            }
             const result = await response.json();
             messageDiv.textContent = result.message;
         } catch (error) {

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from fastapi import FastAPI, Request, Form, UploadFile, File
+from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
@@ -8,6 +8,7 @@ from typing import List
 from rag import RAGVectorStore
 from qa import QAChat
 import os
+import uuid
 
 app = FastAPI()
 
@@ -30,26 +31,47 @@ async def generation(request: Request):
     return templates.TemplateResponse("generation.html", {"request": request})
 
 @app.post("/index")
-async def index_files(files: List[UploadFile] = File(...), websites: str = Form(...)):
+async def index_files(files: List[UploadFile] = File(...), websites: List[str] = Form(...)):
+    # Validate inputs
+    if not files and not websites:
+        raise HTTPException(status_code=400, detail="No files or websites provided.")
+
     # Process uploaded files
     for file in files:
-        contents = await file.read()
-        with open(file.filename, "wb") as f:
-            f.write(contents)
-        rag_store.add_documents([file.filename])
-        os.remove(file.filename)  # Clean up temporary file
+        if not file.filename:
+            continue  # Skip files without a filename
+        try:
+            contents = await file.read()
+            temp_filename = f"temp_{uuid.uuid4().hex}_{file.filename}"
+            with open(temp_filename, "wb") as f:
+                f.write(contents)
+            rag_store.add_documents([temp_filename])
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to process file {file.filename}: {str(e)}")
+        finally:
+            if os.path.exists(temp_filename):
+                os.remove(temp_filename)  # Clean up temporary file
 
     # Process websites
     if websites:
-        website_list = [website.strip() for website in websites.split(',') if website.strip()]
-        rag_store.add_webpages(website_list)
+        website_list = [website.strip() for website in websites if website.strip()]
+        if website_list:
+            try:
+                rag_store.add_webpages(website_list)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Failed to process websites: {str(e)}")
 
     return {"message": "Indexing completed successfully"}
 
 @app.post("/generate")
 async def generate(question: str = Form(...)):
-    answer = qa_chat.ask_question(question)
-    return {"answer": answer}
+    if not question.strip():
+        raise HTTPException(status_code=400, detail="Question cannot be empty.")
+    try:
+        answer = qa_chat.ask_question(question)
+        return {"answer": answer}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate answer: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
