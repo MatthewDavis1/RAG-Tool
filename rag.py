@@ -121,7 +121,7 @@ def main():
 
     # Add webpages
     add_webpages_parser = subparsers.add_parser("add_webpages", help="Add webpages to the vector store")
-    add_webpages_parser.add_argument("webpage_paths", type=str, help="Path to the webpage file")
+    add_webpages_parser.add_argument("webpage_paths", type=str, help="Links to the webpages")
 
     args = parser.parse_args()
 
