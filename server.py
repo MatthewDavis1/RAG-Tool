@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
+from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException, WebSocket
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
@@ -9,6 +9,7 @@ from rag import RAGVectorStore
 from qa import QAChat
 import os
 import uuid
+import json
 
 app = FastAPI()
 
@@ -22,6 +23,9 @@ templates = Jinja2Templates(directory="frontend/templates")
 rag_store = RAGVectorStore()
 qa_chat = QAChat()
 
+# Store chat history
+chat_history = []
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("rag_index.html", {"request": request})
@@ -29,6 +33,24 @@ async def index(request: Request):
 @app.get("/generation", response_class=HTMLResponse)
 async def generation(request: Request):
     return templates.TemplateResponse("generation.html", {"request": request})
+
+@app.get("/chat", response_class=HTMLResponse)
+async def chat(request: Request):
+    return templates.TemplateResponse("chat.html", {"request": request, "chat_history": chat_history})
+
+@app.websocket("/ws/chat")
+async def websocket_chat_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        user_message = json.loads(data)["message"]
+        chat_history.append({"role": "user", "content": user_message})
+        
+        # Generate AI response
+        ai_response = qa_chat.ask_question(user_message)
+        chat_history.append({"role": "ai", "content": ai_response})
+        
+        await websocket.send_json({"message": ai_response})
 
 @app.post("/index")
 async def index_files(files: List[UploadFile] = File(...), websites: List[str] = Form(...)):

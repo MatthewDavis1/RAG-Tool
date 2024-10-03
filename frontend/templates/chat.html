@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-3xl mx-auto px-4 py-8">
+        <nav class="mb-8">
+            <ul class="flex justify-center space-x-4">
+                <li><a href="/" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-300">Indexing</a></li>
+                <li><a href="/generation" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-300">Generation</a></li>
+                <li><a href="/chat" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">Chat</a></li>
+            </ul>
+        </nav>
+
+        <h1 class="text-3xl font-bold mb-8 text-center">AI Chat</h1>
+
+        <div id="chatContainer" class="space-y-4 bg-white shadow-md rounded-lg p-6">
+            <div id="messages" class="space-y-2 overflow-y-auto h-96">
+                {% for message in chat_history %}
+                    <div class="{% if message.role == 'user' %}text-right{% endif %}">
+                        <span class="inline-block px-4 py-2 rounded-lg {% if message.role == 'user' %}bg-blue-100 text-blue-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ message.content }}
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+            <form id="chatForm" class="flex">
+                <input type="text" id="userInput" name="userInput" placeholder="Type your message..." class="flex-grow border border-gray-300 rounded-l-md px-4 py-2 focus:outline-none" required />
+                <button type="submit" id="sendBtn" class="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 transition duration-300">
+                    <span id="btnText">Send</span>
+                    <svg id="spinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const messages = document.getElementById('messages');
+        const sendBtn = document.getElementById('sendBtn');
+        const btnText = document.getElementById('btnText');
+        const spinner = document.getElementById('spinner');
+
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/chat');
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            appendMessage('ai', data.message);
+            btnText.classList.remove('hidden');
+            spinner.classList.add('hidden');
+            sendBtn.disabled = false;
+        };
+
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const message = userInput.value.trim();
+            if (message) {
+                appendMessage('user', message);
+                socket.send(JSON.stringify({message: message}));
+                userInput.value = '';
+                btnText.classList.add('hidden');
+                spinner.classList.remove('hidden');
+                sendBtn.disabled = true;
+            }
+        });
+
+        function appendMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = role === 'user' ? 'text-right' : '';
+            messageDiv.innerHTML = `
+                <span class="inline-block px-4 py-2 rounded-lg ${role === 'user' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">
+                    ${content}
+                </span>
+            `;
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+</html>
