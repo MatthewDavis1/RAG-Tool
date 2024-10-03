@@ -120,11 +120,58 @@ function setupGenerationPage() {
     });
 }
 
+// Chat page functionality
+function setupChatPage() {
+    const chatForm = document.getElementById('chatForm');
+    const userInput = document.getElementById('userInput');
+    const messages = document.getElementById('messages');
+    const sendBtn = document.getElementById('sendBtn');
+    const btnText = document.getElementById('btnText');
+    const spinner = document.getElementById('spinner');
+
+    const socket = new WebSocket('ws://' + window.location.host + '/ws/chat');
+
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        appendMessage('ai', data.message);
+        btnText.classList.remove('hidden');
+        spinner.classList.add('hidden');
+        sendBtn.disabled = false;
+    };
+
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = userInput.value.trim();
+        if (message) {
+            appendMessage('user', message);
+            socket.send(JSON.stringify({message: message}));
+            userInput.value = '';
+            btnText.classList.add('hidden');
+            spinner.classList.remove('hidden');
+            sendBtn.disabled = true;
+        }
+    });
+
+    function appendMessage(role, content) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = role === 'user' ? 'text-right' : '';
+        messageDiv.innerHTML = `
+            <span class="inline-block px-4 py-2 rounded-lg ${role === 'user' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">
+                ${content}
+            </span>
+        `;
+        messages.appendChild(messageDiv);
+        messages.scrollTop = messages.scrollHeight;
+    }
+}
+
 // Check which page we're on and setup accordingly
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('indexForm')) {
         setupIndexingPage();
     } else if (document.getElementById('generationForm')) {
         setupGenerationPage();
+    } else if (document.getElementById('chatForm')) {
+        setupChatPage();
     }
 });
