@@ -1,1 +1,1 @@
-export VECTOR_STORE_PATH="./vector_store.db"
+export VECTOR_STORE_PATH="./vector-store.db"
